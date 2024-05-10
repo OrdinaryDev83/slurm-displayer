@@ -1,5 +1,7 @@
 # slurm-utilities
 
+![image](docs/cool.png)
+
 ## Job View
 
 Dynamic Slurm bash displayer tailored to Siemens' Sherlock.

@@ -32,7 +32,7 @@ display_job_stats() {
             if [[ ! -z "$4" && $INFO == *"train"* ]]; then
                 stream=$(cat "$file" | tail -n 300)
                 epoch_number=$(echo $stream | tail -n 10 | grep -oP 'Epoch \K\d{1,5}' | tail -n 1)
-                percentage=$(echo $stream | tail -n 10 | grep -oP 'Epoch \d{1,5}:  \K\d{1,3}+%'| tail -n 1)
+                percentage=$(echo $stream | tail -n 10 | grep -oP '\K\d{1,3}+%'| tail -n 1)
                 dice_score=$(echo $stream | grep -oP 'Dice score: \K\d+\.\d+'| tail -n 1 | cut -c 1-10)
                 whole_image_dice_score=$(echo $stream | grep -oP 'Whole image dice score overall: \K\d+\.\d+'| tail -n 1 | cut -c 1-10)
 
