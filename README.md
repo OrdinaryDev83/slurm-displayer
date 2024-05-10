@@ -3,8 +3,15 @@
 ## Job View
 
 Dynamic Slurm bash displayer tailored to Siemens' Sherlock.
-Displays the last line of the slurm output file.
-Features a lightning training logs scraping in order to display training progress and results.
+- Statistics for Running Jobs
+-- JobID - Name - Partition - NodeName - Time Running
+-- (Optional) Features a lightning training logs scraping
+--- Current Epoch - Current Epoch Progress - Dice Scores
+-- Displays the lastest line of each job's slurm output file
+- Statistics for the last N jobs
+-- JobID (color=STATE) - JobName - Partition - Node - Elapsed - Start
+- Sherlock GUI links
+-- JobID - Link
 
 ### Usage
 
@@ -18,7 +25,7 @@ Features a lightning training logs scraping in order to display training progres
 
 ├─ -w: watch_frequency: job display update delay
 
-└─ -L: if set, the script displays the training progress of the lightning training jobs
+└─ -L: if set, displays the training progress of the lightning training jobs (\*train\* in JobName)
 
 ### Example
 
