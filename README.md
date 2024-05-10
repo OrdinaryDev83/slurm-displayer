@@ -3,6 +3,7 @@
 ## Job View
 
 Dynamic Slurm bash displayer tailored to Siemens' Sherlock.
+Displays the last line of the slurm output file.
 Features a lightning training logs scraping in order to display training progress and results.
 
 ### Usage
