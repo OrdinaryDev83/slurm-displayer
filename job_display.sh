@@ -4,7 +4,7 @@
 display_job_stats() {
     # Use squeue to get list of running jobs' IDs, Partition, Node Names, and Time Running
     echo -e "\e[42m\e[97m Fetching stats for running jobs... \e[0m"
-    readarray -t JOB_INFO <<< "$(squeue -u $user -t RUNNING --noheader --format='%i %18j %P %N %M %G')" 
+    readarray -t JOB_INFO <<< "$(squeue -u $1 -t RUNNING --noheader --format='%i %18j %P %N %M %G')" 
 
     # Check if there are no running jobs
     if [ -z "${JOB_INFO[*]}" ]; then
@@ -26,10 +26,10 @@ display_job_stats() {
         # Output the collected information
         printf "%-8s\t%-18s\t%-12s\t%-16s\t%-12s\t%s\n" "$JOB_ID" "$NAME" "$PARTITION" "$NODE_NAME" "$TIME_RUNNING"
 
-        file=$(find $1 -type f -name "*$JOB_ID*.out")
+        file=$(find $2 -type f -name "*$JOB_ID*.out")
         # Check if the file was found
         if ! [[ -z "$file" ]]; then
-            if [[ ! -z "$2" && $INFO == *"train"* ]]; then
+            if [[ ! -z "$4" && $INFO == *"train"* ]]; then
                 stream=$(cat "$file" | tail -n 300)
                 epoch_number=$(echo $stream | tail -n 10 | grep -oP 'Epoch \K\d{1,5}' | tail -n 1)
                 percentage=$(echo $stream | tail -n 10 | grep -oP 'Epoch \d{1,5}:  \K\d{1,3}+%'| tail -n 1)
@@ -47,11 +47,11 @@ display_job_stats() {
 
 # Function to display the last 5 completed jobs
 display_recent_jobs() {
-    echo -e "\e[44m\e[97m Fetching stats for the last $1 run jobs... \e[0m"        
+    echo -e "\e[44m\e[97m Fetching stats for the last $2 run jobs... \e[0m"        
     # Fetch and format the last 5 completed jobs
     printf "%s\t%-16s\t%s\t%s\t%-12s\t%s\n" "JobID" "JobName" "Partition" "Node" "Elapsed" "Start"
-    sacct -X -u $user --format=JobID,JobName%20,Partition,NodeList,Elapsed,State,Start -S $(date --date='7 days ago' +%Y-%m-%d) \
-    --noheader | tac | head -n $1 | awk '{
+    sacct -X -u $1 --format=JobID,JobName%20,Partition,NodeList,Elapsed,State,Start -S $(date --date='7 days ago' +%Y-%m-%d) \
+    --noheader | tac | head -n $2 | awk '{
         cmd="date -d \""$7"\" \"+%m/%d %H:%M\""; 
         cmd | getline formatted_date; 
         close(cmd);
@@ -90,11 +90,9 @@ display_job_links() {
     done
 }
 
-user=$1
-
 # Call the functions
-display_job_stats "$3" "$4"
+display_job_stats $1 $2 $3 $4
 echo ''
-display_recent_jobs "$2"
+display_recent_jobs $1 $2 $3 $4
 echo ''
-display_job_links
+display_job_links $1 $2 $3 $4
