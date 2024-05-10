@@ -26,7 +26,7 @@ display_job_stats() {
         # Output the collected information
         printf "%-8s\t%-18s\t%-12s\t%-16s\t%-12s\t%s\n" "$JOB_ID" "$NAME" "$PARTITION" "$NODE_NAME" "$TIME_RUNNING"
 
-        file=$(find $2 -type f -name "*$JOB_ID*.out")
+        file=$(find $3 -type f -name "*$JOB_ID*.out")
         # Check if the file was found
         if ! [[ -z "$file" ]]; then
             if [[ ! -z "$4" && $INFO == *"train"* ]]; then
