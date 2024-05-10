@@ -52,18 +52,21 @@ display_recent_jobs() {
     printf "%s\t%-16s\t%s\t%s\t%-12s\t%s\n" "JobID" "JobName" "Partition" "Node" "Elapsed" "Start"
     sacct -X -u $1 --format=JobID,JobName%20,Partition,NodeList,Elapsed,State,Start -S $(date --date='7 days ago' +%Y-%m-%d) \
     --noheader | tac | head -n $2 | awk '{
-        cmd="date -d \""$7"\" \"+%m/%d %H:%M\""; 
-        cmd | getline formatted_date; 
-        close(cmd);
-        color="97"; # Default to white
+        if ($7 == "PENDING") {
+            formatted_date = "PENDING";
+        } else {
+            cmd="date -d \""$7"\" \"+%m/%d %H:%M\""; 
+            cmd | getline formatted_date; 
+            close(cmd);
+        }
+        color="35"; # Default to white
         if ($6 == "FAILED") color="31"; # Red for failed
         else if ($6 == "COMPLETED") color="32"; # Green for completed
         else if ($6 == "CANCELLED") color="90"; # Dark Gray for cancelled
-        else if ($6 == "PENDING") color="33"; # Yellow for pending
+        else if ($7 == "PENDING") color="33"; # Yellow for pending
         else if ($6 == "OUT_OF_MEMORY") color="41"; # Background red for out of memory
         else if ($6 == "RUNNING") color="42"; # Background green for running
         else if ($6 == "TIMEOUT") color="47"; # Background dark gray for timeout
-        else color="35"; # Magenta for other cases
         printf "\033[1;"color"m%s\033[0m\t%-16s\t%s\t%s\t%-12s\t%s\n", $1, $2, $3, $4, $5, formatted_date
     }'
     echo -e "Legend: \e[31mFAILED\e[0m, \e[32mCOMPLETED\e[0m, \e[90mCANCELLED\e[0m, \e[33mPENDING\e[0m, \e[41mOUT_OF_MEMORY\e[0m, \e[42mRUNNING\e[0m, \e[47mTIMEOUT\e[0m, \e[35mOTHER\e[0m"
