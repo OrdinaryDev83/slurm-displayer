@@ -54,6 +54,8 @@ display_recent_jobs() {
     --noheader | tac | head -n $2 | awk '{
         if ($7 == "PENDING") {
             formatted_date = "PENDING";
+        } else if ($7 == "CANCELLED+") {
+            formatted_date = "LEFT QUEUE";
         } else {
             cmd="date -d \""$7"\" \"+%m/%d %H:%M\""; 
             cmd | getline formatted_date; 
@@ -62,8 +64,8 @@ display_recent_jobs() {
         color="35"; # Default to white
         if ($6 == "FAILED") color="31"; # Red for failed
         else if ($6 == "COMPLETED") color="32"; # Green for completed
-        else if ($6 == "CANCELLED") color="90"; # Dark Gray for cancelled
-        else if ($7 == "PENDING") color="33"; # Yellow for pending
+        else if ($6 == "CANCELLED+" || $7 == "CANCELLED+") color="90"; # Dark Gray for cancelled
+        else if ($6 == "PENDING"|| $7 == "PENDING") color="33"; # Yellow for pending
         else if ($6 == "OUT_OF_MEMORY") color="41"; # Background red for out of memory
         else if ($6 == "RUNNING") color="42"; # Background green for running
         else if ($6 == "TIMEOUT") color="47"; # Background dark gray for timeout
