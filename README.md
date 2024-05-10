@@ -4,22 +4,14 @@
 
 Dynamic Slurm bash displayer tailored to Siemens' Sherlock.
 - Statistics for Running Jobs
-
- - JobID - Name - Partition - NodeName - Time Running
-
- - (Optional) Features a lightning training logs scraping
-
-  - Current Epoch - Current Epoch Progress - Dice Scores
-
- - Displays the lastest line of each job's slurm output file
-
+  - JobID - Name - Partition - NodeName - Time Running
+  - (Optional) Features a lightning training logs scraping
+    - Current Epoch - Current Epoch Progress - Dice Scores
+  - Displays the lastest line of each job's slurm output file
 - Statistics for the last N jobs
-
- - JobID (color=STATE) - JobName - Partition - Node - Elapsed - Start
-
+  - JobID (color=STATE) - JobName - Partition - Node - Elapsed - Start
 - Sherlock GUI links
-
- - JobID - Link
+  - JobID - Link
 
 ### Usage
 
