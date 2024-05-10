@@ -4,7 +4,7 @@
 display_job_stats() {
     # Use squeue to get list of running jobs' IDs, Partition, Node Names, and Time Running
     echo -e "\e[42m\e[97m Fetching stats for running jobs... \e[0m"
-    readarray -t JOB_INFO <<< "$(squeue -u z004wwtk -t RUNNING --noheader --format='%i %18j %P %N %M %G')" 
+    readarray -t JOB_INFO <<< "$(squeue -u $user -t RUNNING --noheader --format='%i %18j %P %N %M %G')" 
 
     # Check if there are no running jobs
     if [ -z "${JOB_INFO[*]}" ]; then
@@ -50,7 +50,7 @@ display_recent_jobs() {
     echo -e "\e[44m\e[97m Fetching stats for the last $1 run jobs... \e[0m"        
     # Fetch and format the last 5 completed jobs
     printf "%s\t%-16s\t%s\t%s\t%-12s\t%s\n" "JobID" "JobName" "Partition" "Node" "Elapsed" "Start"
-    sacct -X -u z004wwtk --format=JobID,JobName%20,Partition,NodeList,Elapsed,State,Start -S $(date --date='7 days ago' +%Y-%m-%d) \
+    sacct -X -u $user --format=JobID,JobName%20,Partition,NodeList,Elapsed,State,Start -S $(date --date='7 days ago' +%Y-%m-%d) \
     --noheader | tac | head -n $1 | awk '{
         cmd="date -d \""$7"\" \"+%m/%d %H:%M\""; 
         cmd | getline formatted_date; 
