@@ -35,8 +35,15 @@ display_job_stats() {
                 percentage=$(echo $stream | tail -n 10 | grep -oP '\K\d{1,3}+%'| tail -n 1)
                 dice_score=$(echo $stream | grep -oP 'Dice score: \K\d+\.\d+'| tail -n 1 | cut -c 1-10)
                 whole_image_dice_score=$(echo $stream | grep -oP 'Whole image dice score overall: \K\d+\.\d+'| tail -n 1 | cut -c 1-10)
+                version_number=$(echo $stream | grep -oP ', v_num=\K\d{1,3}' | tail -n 1)
 
-                echo -e "├─ Training Info : Epoch $epoch_number - $percentage | Dice P $dice_score - I $whole_image_dice_score"
+                echo -e "├─ Training Info : Epoch $epoch_number - $percentage | Dice P $dice_score - I $whole_image_dice_score | Version $version_number"
+            elif [[ ! -z "$4" && $INFO == *"test"* ]]; then
+                stream=$(cat "$file" | tail -n 300)
+                percentage=$(echo $stream | tail -n 10 | grep -oP '\K\d{1,3}+%'| tail -n 1)
+                version_number=$(echo $stream | grep -oP ', v_num=\K\d{1,3}' | tail -n 1)
+
+                echo -e "├─ Testing Info : Epoch $percentage | Version $version_number"
             fi
             
             line1=$(tail -n 1 "$file" | tr '\r' '\n' | tail -n 1)
