@@ -17,11 +17,12 @@ display_job_stats() {
 
     for INFO in "${JOB_INFO[@]}"; do
         # Parse job info
-        JOB_ID=$(echo $INFO | awk '{print $1}')
-        NAME=$(echo $INFO | awk '{print $2}')
-        PARTITION=$(echo $INFO | awk '{print $3}')
-        NODE_NAME=$(echo $INFO | awk '{print $4}')
-        TIME_RUNNING=$(echo $INFO | awk '{print $5}')
+        read -a JOB <<< "$INFO"
+        JOB_ID=${JOB[0]}
+        NAME=${JOB[1]}
+        PARTITION=${JOB[2]}
+        NODE_NAME=${JOB[3]}
+        TIME_RUNNING=${JOB[4]}
 
         # Output the collected information
         printf "%-8s\t%-18s\t%-12s\t%-16s\t%-12s\t%s\n" "$JOB_ID" "$NAME" "$PARTITION" "$NODE_NAME" "$TIME_RUNNING"
@@ -30,35 +31,74 @@ display_job_stats() {
         if [[ ! -z ${FILE_DICT[$JOB_ID]} ]]; then
             file=${FILE_DICT[$JOB_ID]}
         else
-            file=$(find $3 -type f -name "*$JOB_ID*.out")
+            file=$(find $3 -type f -name "*$JOB_ID*.out" -print -quit)
             if [[ ! -z "$file" ]]; then
                 FILE_DICT[$JOB_ID]=$file
             fi
         fi
 
         # Check if the file was found
-        if ! [[ -z "$file" ]]; then
-            if [[ ! -z "$4" && $INFO == *"train"* ]]; then
-                stream=$(cat "$file" | tail -n 300)
-                epoch_number=$(echo $stream | tail -n 10 | grep -oP 'Epoch \K\d{1,5}' | tail -n 1)
-                percentage=$(echo $stream | tail -n 10 | grep -oP '\K\d{1,3}+%'| tail -n 1)
-                dice_score=$(echo $stream | grep -oP 'Dice score: \K\d+\.\d+'| tail -n 1 | cut -c 1-10)
-                whole_image_dice_score=$(echo $stream | grep -oP 'Whole image dice score overall: \K\d+\.\d+'| tail -n 1 | cut -c 1-10)
-                version_number=$(echo $stream | grep -oP ', v_num=\K\d{1,3}' | tail -n 1)
-
-                echo -e "├─ Training Info : Epoch $epoch_number - $percentage | Dice P $dice_score - I $whole_image_dice_score | Version $version_number"
-            elif [[ ! -z "$4" && $INFO == *"test"* ]]; then
-                stream=$(cat "$file" | tail -n 300)
-                percentage=$(echo $stream | tail -n 10 | grep -oP '\K\d{1,3}+%'| tail -n 1)
-                version_number=$(echo $stream | grep -oP ', v_num=\K\d{1,3}' | tail -n 1)
-
-                echo -e "├─ Testing Info : Epoch $percentage | Version $version_number"
+        if [[ -n "$file" ]]; then
+            if [[ -n "$4" && $INFO == *"train"* ]]; then
+                update_variables "$file" "$JOB_ID" "train"
+                epoch=${VARIABLES["$JOB_ID,epoch_number"]}
+                percentage=${VARIABLES["$JOB_ID,percentage"]}
+                dice_score=${VARIABLES["$JOB_ID,dice_score"]}
+                whole_image_dice_score=${VARIABLES["$JOB_ID,whole_image_dice_score"]}
+                version_number=${VARIABLES["$JOB_ID,version_number"]}
+                echo -e "├─ Training Info : Epoch ${epoch} - ${percentage}% | Dice P ${dice_score/^/.} - I ${whole_image_dice_score/^/.} | Version ${version_number}"
+            elif [[ -n "$4" && $INFO == *"test"* ]]; then
+                update_variables "$file" "$JOB_ID" "test"
+                percentage=${VARIABLES["$JOB_ID,percentage"]}
+                version_number=${VARIABLES["$JOB_ID,version_number"]}
+                echo -e "├─ Testing Info : Epoch ${percentage}% | Version ${version_number}"
             fi
-            
+
             line1=$(tail -n 1 "$file" | tr '\r' '\n' | tail -n 1)
             echo -e "└─\e[32m $line1 \e[0m"
         fi
     done
+}
+
+# Function to update the variables from the last line of the log file
+update_variables() {
+    local file=$1
+    local jobid=$2
+    local type=$3
+
+    epoch_number=${VARIABLES[${jobid},epoch_number]}
+    percentage=${VARIABLES[${jobid},percentage]}
+    dice_score=${VARIABLES[${jobid},dice_score]}
+    whole_image_dice_score=${VARIABLES[${jobid},whole_image_dice_score]}
+    version_number=${VARIABLES[${jobid},version_number]}
+
+    size=1
+    if [[ -z "$epoch_number" || -z "$percentage" || -z "$version_number" ]]; then
+        size=10
+    elif [[ -z "$dice_score" || -z "$whole_image_dice_score" ]]; then
+        size=300
+    fi
+    stream=$(tail -n $size "$file")
+    
+    if [[ $type == "train" ]]; then
+        epoch_number=$(echo "$stream" | grep -oP 'Epoch \K\d{1,5}' | tail -n 1)
+        percentage=$(echo "$stream" | grep -oP '\K\d{1,3}+%'| tail -n 1)
+        dice_score=$(echo "$stream" | grep -oP 'Dice score: \K\d+\.\d+'| tail -n 1 | cut -c 1-10)
+        whole_image_dice_score=$(echo "$stream" | grep -oP 'Whole image dice score overall: \K\d+\.\d+'| tail -n 1 | cut -c 1-10)
+        version_number=$(echo "$stream" | grep -oP ', v_num=\K\d{1,3}' | tail -n 1)
+    elif [[ $type == "test" ]]; then
+        percentage=$(echo "$stream" | grep -oP '\K\d{1,3}+%'| tail -n 1)
+        version_number=$(echo "$stream" | grep -oP ', v_num=\K\d{1,3}' | tail -n 1)
+    fi
+
+    percentage=${percentage/\%/}
+    dice_score=${dice_score/\./^}
+    whole_image_dice_score=${whole_image_dice_score/\./^}
+    VARIABLES["${jobid},epoch_number"]="${epoch_number}"
+    VARIABLES["${jobid},percentage"]="${percentage}"
+    VARIABLES["${jobid},dice_score"]="${dice_score}"
+    VARIABLES["${jobid},whole_image_dice_score"]="${whole_image_dice_score}"
+    VARIABLES["${jobid},version_number"]="${version_number}"
 }
 
 # Function to display the last 5 completed jobs
@@ -100,8 +140,9 @@ display_job_links() {
 
     for INFO in "${JOB_INFO[@]}"; do
         # Parse job info
-        JOB_ID=$(echo $INFO | awk '{print $1}')
-        NODE_NAME=$(echo $INFO | awk '{print $4}')
+        read -a JOB <<< "$INFO"
+        JOB_ID=${JOB[0]}
+        NODE_NAME=${JOB[3]}
         
         base_url="http://sherlockkpi.ainet.hcvpc.io:3000/d/8OWSMSq4k/job-metrics?orgId=1&from=now-30m&to=now&var-cluster=sherlock&var-host="
         LINK="${base_url}${NODE_NAME}&var-job_id=${JOB_ID}&refresh=5s"
@@ -113,8 +154,7 @@ display_job_links() {
 export -f display_job_stats
 export -f display_recent_jobs
 export -f display_job_links
-
-declare -A FILE_DICT
+export -f update_variables
 
 # watch instead
 loop(){
@@ -127,4 +167,4 @@ loop(){
 }
 export -f loop
 
-watch --color -x bash -c "loop $1 $2 $3 $4"
+loop $1 $2 $3 $4
