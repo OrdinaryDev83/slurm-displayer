@@ -26,7 +26,16 @@ display_job_stats() {
         # Output the collected information
         printf "%-8s\t%-18s\t%-12s\t%-16s\t%-12s\t%s\n" "$JOB_ID" "$NAME" "$PARTITION" "$NODE_NAME" "$TIME_RUNNING"
 
-        file=$(find $3 -type f -name "*$JOB_ID*.out")
+        # Check if the file was already found and stored in the dictionary
+        if [[ ! -z ${FILE_DICT[$JOB_ID]} ]]; then
+            file=${FILE_DICT[$JOB_ID]}
+        else
+            file=$(find $3 -type f -name "*$JOB_ID*.out")
+            if [[ ! -z "$file" ]]; then
+                FILE_DICT[$JOB_ID]=$file
+            fi
+        fi
+
         # Check if the file was found
         if ! [[ -z "$file" ]]; then
             if [[ ! -z "$4" && $INFO == *"train"* ]]; then
@@ -101,10 +110,21 @@ display_job_links() {
         printf "%-8s\t%-16s\n" "$JOB_ID" "$LINK"
     done
 }
+export -f display_job_stats
+export -f display_recent_jobs
+export -f display_job_links
 
-# Call the functions
-display_job_stats $1 $2 $3 $4
-echo ''
-display_recent_jobs $1 $2 $3 $4
-echo ''
-display_job_links $1 $2 $3 $4
+declare -A FILE_DICT
+
+# watch instead
+loop(){
+    display_job_stats $1 $2 $3 $4
+    echo ''
+    display_recent_jobs $1 $2 $3 $4
+    echo ''
+    display_job_links $1 $2 $3 $4
+    sleep 2
+}
+export -f loop
+
+watch --color -x bash -c "loop $1 $2 $3 $4"
