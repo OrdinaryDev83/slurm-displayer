@@ -19,7 +19,7 @@ Dynamic Slurm bash displayer tailored to Siemens' Sherlock.
 
 ### Usage
 
-`./job_display.sh <user> <job_history_length> <job_slurm_logs_root_file> [-w watch_frequency] [-L]`
+`./job_view.sh <user> <job_history_length> <job_slurm_logs_root_file> [-w watch_frequency] [-L]`
 
 ├─ user: The username of the user whose jobs you want to monitor
 
