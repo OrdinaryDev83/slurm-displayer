@@ -17,7 +17,6 @@ split_string() {
 }
 
 export -f split_string
-export -f unsplit_string
 
 # Define a function to fetch and display JobID, AveCPUFreq, Node Name, Partition, and Time Running    
 display_job_stats() {
