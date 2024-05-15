@@ -1,5 +1,24 @@
 #!/bin/bash
 
+split_string() {
+  local input="$1"
+  local delimiter="^"
+  local output=""
+
+  for (( i=0; i<${#input}; i++ )); do
+    char="${input:$i:1}"
+    output+="$char"
+    if (( i < ${#input} - 1 )); then
+      output+="$delimiter"
+    fi
+  done
+
+  echo "$output"
+}
+
+export -f split_string
+export -f unsplit_string
+
 # Define a function to fetch and display JobID, AveCPUFreq, Node Name, Partition, and Time Running    
 display_job_stats() {
     # Use squeue to get list of running jobs' IDs, Partition, Node Names, and Time Running
@@ -43,10 +62,10 @@ display_job_stats() {
                 update_variables "$file" "$JOB_ID" "train"
                 epoch=${VARIABLES["$JOB_ID,epoch_number"]}
                 percentage=${VARIABLES["$JOB_ID,percentage"]}
-                dice_score=${VARIABLES["$JOB_ID,dice_score"]}
-                whole_image_dice_score=${VARIABLES["$JOB_ID,whole_image_dice_score"]}
+                dice_score=${VARIABLES["$JOB_ID,dice_score"]//V/_}
+                whole_image_dice_score=${VARIABLES["$JOB_ID,whole_image_dice_score"]//V/_}
                 version_number=${VARIABLES["$JOB_ID,version_number"]}
-                echo -e "├─ Training Info : Epoch ${epoch} - ${percentage}% | Dice P ${dice_score/^/.} - I ${whole_image_dice_score/^/.} | Version ${version_number}"
+                echo -e "├─ Training Info : Epoch ${epoch} - ${percentage}% | Dice P ${dice_score//^/} - I ${whole_image_dice_score//^/} | Version ${version_number}"
             elif [[ -n "$4" && $INFO == *"test"* ]]; then
                 update_variables "$file" "$JOB_ID" "test"
                 percentage=${VARIABLES["$JOB_ID,percentage"]}
@@ -92,8 +111,10 @@ update_variables() {
     fi
 
     percentage=${percentage/\%/}
-    dice_score=${dice_score/\./^}
-    whole_image_dice_score=${whole_image_dice_score/\./^}
+    dice_score=${dice_score/\./V}
+    dice_score=$(split_string "${dice_score}")
+    whole_image_dice_score=${whole_image_dice_score/\./V}
+    whole_image_dice_score=$(split_string "${whole_image_dice_score}")
     VARIABLES["${jobid},epoch_number"]="${epoch_number}"
     VARIABLES["${jobid},percentage"]="${percentage}"
     VARIABLES["${jobid},dice_score"]="${dice_score}"
