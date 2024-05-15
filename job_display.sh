@@ -61,6 +61,7 @@ display_job_stats() {
                 update_variables "$file" "$JOB_ID" "train"
                 epoch=${VARIABLES["$JOB_ID,epoch_number"]}
                 percentage=${VARIABLES["$JOB_ID,percentage"]}
+                # echo "p" $percentage
                 dice_score=${VARIABLES["$JOB_ID,dice_score"]//V/_}
                 whole_image_dice_score=${VARIABLES["$JOB_ID,whole_image_dice_score"]//V/_}
                 version_number=${VARIABLES["$JOB_ID,version_number"]}
@@ -86,6 +87,7 @@ update_variables() {
 
     epoch_number=${VARIABLES[${jobid},epoch_number]}
     percentage=${VARIABLES[${jobid},percentage]}
+    # echo $jobid $percentage
     dice_score=${VARIABLES[${jobid},dice_score]}
     whole_image_dice_score=${VARIABLES[${jobid},whole_image_dice_score]}
     version_number=${VARIABLES[${jobid},version_number]}
@@ -126,8 +128,10 @@ display_recent_jobs() {
     echo -e "\e[44m\e[97m Fetching stats for the last $2 run jobs... \e[0m"        
     # Fetch and format the last 5 completed jobs
     printf "%s\t%-16s\t%s\t%s\t%-12s\t%s\n" "JobID" "JobName" "Partition" "Node" "Elapsed" "Start"
-    sacct -X -u $1 --format=JobID,JobName%20,Partition,NodeList,Elapsed,State,Start -S $(date --date='7 days ago' +%Y-%m-%d) \
-    --noheader | tac | head -n $2 | awk '{
+    tosearch=$(( $2 * 2 ))
+    lines=$(sacct -X -u $1 --format=JobID,JobName%20,Partition,NodeList,Elapsed,State,Start -S $(date --date='7 days ago' +%Y-%m-%d) --noheader | tac | head -n $tosearch)
+    tosearch=$(( $2 + $(echo $lines | grep -ow 'bash' | wc -l) ))
+    sacct -X -u $1 --format=JobID,JobName%20,Partition,NodeList,Elapsed,State,Start -S $(date --date='7 days ago' +%Y-%m-%d) --noheader | tac | head -n $tosearch | awk '{
         if ($7 == "PENDING") {
             formatted_date = "PENDING";
         } else if ($7 == "CANCELLED+") {
@@ -145,7 +149,9 @@ display_recent_jobs() {
         else if ($6 == "OUT_OF_MEMORY") color="41"; # Background red for out of memory
         else if ($6 == "RUNNING") color="42"; # Background green for running
         else if ($6 == "TIMEOUT") color="47"; # Background dark gray for timeout
-        printf "\033[1;"color"m%s\033[0m\t%-16s\t%s\t%s\t%-12s\t%s\n", $1, $2, $3, $4, $5, formatted_date
+        if ($2 != "bash") {
+            printf "\033[1;"color"m%s\033[0m\t%-16s\t%s\t%s\t%-12s\t%s\n", $1, $2, $3, $4, $5, formatted_date
+        }
     }'
     echo -e "Legend: \e[31mFAILED\e[0m, \e[32mCOMPLETED\e[0m, \e[90mCANCELLED\e[0m, \e[33mPENDING\e[0m, \e[41mOUT_OF_MEMORY\e[0m, \e[42mRUNNING\e[0m, \e[47mTIMEOUT\e[0m, \e[35mOTHER\e[0m"
 }
