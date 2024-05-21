@@ -94,9 +94,9 @@ update_variables() {
 
     size=1
     if [[ -z "$epoch_number" || -z "$percentage" || -z "$version_number" ]]; then
-        size=10
+        size=50
     elif [[ -z "$dice_score" || -z "$whole_image_dice_score" ]]; then
-        size=300
+        size=500
     fi
     stream=$(tail -n $size "$file")
     
@@ -146,7 +146,7 @@ display_recent_jobs() {
         else if ($6 == "COMPLETED") color="32"; # Green for completed
         else if ($6 == "CANCELLED+" || $7 == "CANCELLED+") color="90"; # Dark Gray for cancelled
         else if ($6 == "PENDING"|| $7 == "PENDING") color="33"; # Yellow for pending
-        else if ($6 == "OUT_OF_MEMORY") color="41"; # Background red for out of memory
+        else if ($6 == "OUT_OF_ME+" || $6 == "OUT_OF_MEMORY") color="41"; # Background red for out of memory
         else if ($6 == "RUNNING") color="42"; # Background green for running
         else if ($6 == "TIMEOUT") color="47"; # Background dark gray for timeout
         if ($2 != "bash") {
